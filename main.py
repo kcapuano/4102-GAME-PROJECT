@@ -6,6 +6,10 @@ from time import sleep
 WHITE = (255, 255, 255)
 BLK = (0, 0, 0)
 GREEN = (20, 255, 20)
+BLUE = (0, 0, 255)
+YLLW = (255, 255, 0)
+RED = (255, 0, 0)
+
 i = 0
 
 
@@ -15,7 +19,47 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
 
         self.image = pygame.Surface([15, 15])
-        self.image.fill(WHITE)
+        self.image.fill(BLUE)
+
+        self.rect = self.image.get_rect()
+        self.rect.y = y
+        self.rect.x = x
+
+        self.change_x = 0
+        self.change_y = 0
+        self.walls = None
+
+    def changespeed(self, x, y):
+        self.change_x += x
+        self.change_y += y
+
+    def update(self):
+        self.rect.x += self.change_x
+        block_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+        for block in block_hit_list:
+            if self.change_x > 0:
+                self.rect.right = block.rect.left
+            else:
+                self.rect.left = block.rect.right
+
+        self.rect.y += self.change_y
+
+        block_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+        for block in block_hit_list:
+            if self.change_y > 0:
+                self.rect.bottom = block.rect.top
+            else:
+                self.rect.top = block.rect.bottom
+
+
+class Blocks(pygame.sprite.Sprite):
+
+    def __init__(self, x, y):
+
+        super().__init__()
+
+        self.image = pygame.Surface([15, 15])
+        self.image.fill(RED)
 
         self.rect = self.image.get_rect()
         self.rect.y = y
@@ -53,7 +97,7 @@ class Wall(pygame.sprite.Sprite):
         super().__init__()
 
         self.image = pygame.Surface([width, height])
-        self.image.fill(BLK)
+        self.image.fill(RED)
 
         self.rect = self.image.get_rect()
         self.rect.y = y
@@ -88,9 +132,16 @@ wall_list.add(wall)
 all_sprite_list.add(wall)
 
 player = Player(50, 50)
+
+blockNum = Blocks(100, 100)
+
 player.walls = wall_list
 
+blockNum.walls = wall_list
+
 all_sprite_list.add(player)
+
+all_sprite_list.add(blockNum)
 
 clock = pygame.time.Clock()
 
@@ -121,7 +172,7 @@ while not done:
 
     all_sprite_list.update()
 
-    screen.fill(GREEN)
+    screen.fill(BLK)
 
     all_sprite_list.draw(screen)
 
