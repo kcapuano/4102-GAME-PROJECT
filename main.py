@@ -68,6 +68,7 @@ class Blocks(pygame.sprite.Sprite):
         self.change_x = 0
         self.change_y = 0
         self.walls = None
+        self.player = None
 
     def changespeed(self, x, y):
         self.change_x += x
@@ -75,6 +76,7 @@ class Blocks(pygame.sprite.Sprite):
 
     def update(self):
         self.rect.x += self.change_x
+
         block_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
         for block in block_hit_list:
             if self.change_x > 0:
@@ -115,6 +117,8 @@ all_sprite_list = pygame.sprite.Group()
 
 wall_list = pygame.sprite.Group()
 
+block_list = pygame.sprite.Group()
+
 wall = Wall(0, 0, 10, 610)
 wall_list.add(wall)
 all_sprite_list.add(wall)
@@ -126,31 +130,48 @@ all_sprite_list.add(wall)
 wall = Wall(10, 600, 600, 10)
 wall_list.add(wall)
 all_sprite_list.add(wall)
+
 # x, y, length, width
 wall = Wall(600, 0, 10, 600)
 wall_list.add(wall)
 all_sprite_list.add(wall)
 
+# player init
+
 player = Player(50, 50)
 
+
 blockNum = Blocks(100, 100)
+block_list.add(blockNum)
+all_sprite_list.add(blockNum)
+
+# wall list
 
 player.walls = wall_list
 
 blockNum.walls = wall_list
 
+player.blockNum = block_list
+
+# player collision add?
+
+
 all_sprite_list.add(player)
 
 all_sprite_list.add(blockNum)
 
+dead = True
+
 clock = pygame.time.Clock()
+
+bg_image = pygame.image.load("space.jpg").convert()
 
 done = False
 
-while not done:
+while dead:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            done = True
+            dead = False
         elif event.type == pygame.KEYDOWN:
             if event.key == K_LEFT:
                 player.changespeed(-3, 0)
