@@ -1,5 +1,6 @@
 import pygame
 from pygame.locals import *
+import random
 import math
 from time import sleep
 
@@ -9,6 +10,9 @@ GREEN = (20, 255, 20)
 BLUE = (0, 0, 255)
 YLLW = (255, 255, 0)
 RED = (255, 0, 0)
+
+wHIGH = 400
+wWIDE = 800
 
 i = 0
 
@@ -34,27 +38,24 @@ class Player(pygame.sprite.Sprite):
         self.change_y += y
 
     def update(self):
-        self.rect.x += self.change_x
-        block_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
-        for block in block_hit_list:
-            if self.change_x > 0:
-                self.rect.right = block.rect.left
-            else:
-                self.rect.left = block.rect.right
 
         self.rect.y += self.change_y
 
-        block_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
-        for block in block_hit_list:
-            if self.change_y > 0:
-                self.rect.bottom = block.rect.top
-            else:
-                self.rect.top = block.rect.bottom
+        self.rect.x += self.change_x
+
+        if self.rect.right > wWIDE:
+            self.rect.right = wWIDE
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.top < 0:
+            self.rect.top = 0
+        if self.rect.bottom > wHIGH:
+            self.rect.bottom = wHIGH
 
 
 class Blocks(pygame.sprite.Sprite):
 
-    def __init__(self, x, y):
+    def __init__(self):
 
         super().__init__()
 
@@ -62,36 +63,52 @@ class Blocks(pygame.sprite.Sprite):
         self.image.fill(RED)
 
         self.rect = self.image.get_rect()
-        self.rect.y = y
-        self.rect.x = x
-
-        self.change_x = 0
-        self.change_y = 0
-        self.walls = None
-        self.player = None
+        self.rect.y = random.randrange(-100, 40)
+        self.rect.x = random.randrange(wWIDE - self.rect.width)
+        self.velocity_y = random.randrange(3, 5)
+        self.velocity_x = random.randrange(-2, 2)
 
     def changespeed(self, x, y):
         self.change_x += x
         self.change_y += y
 
     def update(self):
-        self.rect.x += self.change_x
+        self.rect.y += self.velocity_y
+        self.rect.x += self.velocity_x
+        if self.rect.top > wHIGH + 10:
+            self.rect.x = random.randrange(wWIDE - self.rect.width)
+            self.rect.y = random.randrange(-100, -40)
+            self.velocity_y = random.randrange(3, 5)
+            self.velocity_x = random.randrange(-2, 2)
 
-        block_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
-        for block in block_hit_list:
-            if self.change_x > 0:
-                self.rect.right = block.rect.left
-            else:
-                self.rect.left = block.rect.right
 
-        self.rect.y += self.change_y
+class BlocksRight(pygame.sprite.Sprite):
 
-        block_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
-        for block in block_hit_list:
-            if self.change_y > 0:
-                self.rect.bottom = block.rect.top
-            else:
-                self.rect.top = block.rect.bottom
+    def __init__(self):
+
+        super().__init__()
+
+        self.image = pygame.Surface([15, 15])
+        self.image.fill(GREEN)
+
+        self.rect = self.image.get_rect()
+        self.rect.y = random.randrange(wHIGH - self.rect.height)
+        self.rect.x = random.randrange(-100, 40)
+        self.velocity_x = random.randrange(3, 5)
+        self.velocity_y = random.randrange(-2, 2)
+
+    def changespeed(self, x, y):
+        self.change_x += x
+        self.change_y += y
+
+    def update(self):
+        self.rect.x += self.velocity_x
+        self.rect.y += self.velocity_y
+        if self.rect.right > wWIDE + 10:
+            self.rect.x = random.randrange(0, 30)
+            self.rect.y = random.randrange(wHIGH + self.rect.height)
+            self.velocity_x = random.randrange(3, 5)
+            self.velocity_y = random.randrange(-2, 2)
 
 
 class Wall(pygame.sprite.Sprite):
@@ -109,9 +126,9 @@ class Wall(pygame.sprite.Sprite):
 pygame.init()
 
 
-screen = pygame.display.set_mode([800, 800])
+screen = pygame.display.set_mode([wWIDE, wHIGH])
 
-pygame.display.set_caption('test')
+pygame.display.set_caption('Dodge game')
 
 all_sprite_list = pygame.sprite.Group()
 
@@ -119,52 +136,33 @@ wall_list = pygame.sprite.Group()
 
 block_list = pygame.sprite.Group()
 
-wall = Wall(0, 0, 10, 610)
-wall_list.add(wall)
-all_sprite_list.add(wall)
-
-wall = Wall(10, 0, 600, 10)
-wall_list.add(wall)
-all_sprite_list.add(wall)
-
-wall = Wall(10, 600, 600, 10)
-wall_list.add(wall)
-all_sprite_list.add(wall)
-
-# x, y, length, width
-wall = Wall(600, 0, 10, 600)
-wall_list.add(wall)
-all_sprite_list.add(wall)
-
 # player init
 
 player = Player(50, 50)
-
-
-blockNum = Blocks(100, 100)
-block_list.add(blockNum)
-all_sprite_list.add(blockNum)
 
 # wall list
 
 player.walls = wall_list
 
-blockNum.walls = wall_list
-
-player.blockNum = block_list
 
 # player collision add?
 
-
+space_rocks = pygame.sprite.Group()
 all_sprite_list.add(player)
 
-all_sprite_list.add(blockNum)
+for i in range(5):
+    dodge_entity_top = Blocks()
+    all_sprite_list.add(dodge_entity_top)
+    space_rocks.add(dodge_entity_top)
+
+    dodge_entity_right = BlocksRight()
+    all_sprite_list.add(dodge_entity_right)
+    space_rocks.add(dodge_entity_right)
+
 
 dead = True
 
 clock = pygame.time.Clock()
-
-bg_image = pygame.image.load("space.jpg").convert()
 
 done = False
 
@@ -190,7 +188,6 @@ while dead:
                 player.changespeed(0, -3)
             if event.key == pygame.K_RIGHT:
                 player.changespeed(-3, 0)
-
     all_sprite_list.update()
 
     screen.fill(BLK)
