@@ -1,8 +1,11 @@
 import pygame
 from pygame.locals import *
 import random
-import math
-from time import sleep
+from os import path
+
+pygame.init()
+
+img_dir = path.join(path.dirname('_file_'), 'image_dir')
 
 WHITE = (255, 255, 255)
 BLK = (0, 0, 0)
@@ -16,22 +19,39 @@ wWIDE = 800
 
 i = 0
 
+typeface = pygame.font.match_font('comic_sans_MS')
+
+
+def show_text(surf, t, large, pos_x, pos_y):
+    type_face = pygame.font.Font(typeface, large)
+    f_render = type_face.render(t, True, GREEN)
+    text_pos = f_render.get_rect()
+    text_pos.midtop = (pos_x, pos_y)
+    surf.blit(f_render, text_pos)
+
+
+screen = pygame.display.set_mode([wWIDE, wHIGH])
+
+pygame.display.set_caption('Dodge game')
+
 
 class Player(pygame.sprite.Sprite):
 
-    def __init__(self, x, y):
+    def __init__(self):
         super().__init__()
+        player_image = pygame.image.load(path.join(img_dir, "player.png")).convert_alpha()
 
-        self.image = pygame.Surface([15, 15])
-        self.image.fill(BLUE)
+        self.image = pygame.transform.scale(player_image, (50, 38))
+
+        # self.image.fill(BLUE)
 
         self.rect = self.image.get_rect()
-        self.rect.y = y
-        self.rect.x = x
-
+        self.rect.x = wWIDE / 2
+        self.rect.y = wHIGH / 1.2
         self.change_x = 0
         self.change_y = 0
         self.walls = None
+        self.radius = (self.rect.width * .5)
 
     def changespeed(self, x, y):
         self.change_x += x
@@ -67,6 +87,8 @@ class Blocks(pygame.sprite.Sprite):
         self.rect.x = random.randrange(wWIDE - self.rect.width)
         self.velocity_y = random.randrange(3, 5)
         self.velocity_x = random.randrange(-2, 2)
+        self.radius = self.rect.width * .75
+        self.image = asteroid
 
     def changespeed(self, x, y):
         self.change_x += x
@@ -96,6 +118,8 @@ class BlocksRight(pygame.sprite.Sprite):
         self.rect.x = random.randrange(-100, 40)
         self.velocity_x = random.randrange(3, 5)
         self.velocity_y = random.randrange(-2, 2)
+        self.radius = self.rect.width * .75
+        self.image = asteroid
 
     def changespeed(self, x, y):
         self.change_x += x
@@ -123,53 +147,61 @@ class Wall(pygame.sprite.Sprite):
         self.rect.x = x
 
 
-pygame.init()
-
-
-screen = pygame.display.set_mode([wWIDE, wHIGH])
-
-pygame.display.set_caption('Dodge game')
-
-all_sprite_list = pygame.sprite.Group()
-
 wall_list = pygame.sprite.Group()
 
 block_list = pygame.sprite.Group()
 
-# player init
-
-player = Player(50, 50)
-
-# wall list
-
-player.walls = wall_list
-
-
 # player collision add?
 
-space_rocks = pygame.sprite.Group()
-all_sprite_list.add(player)
 
-for i in range(5):
-    dodge_entity_top = Blocks()
-    all_sprite_list.add(dodge_entity_top)
-    space_rocks.add(dodge_entity_top)
+def main_menu():
+    screen.blit(background, bg_full)
+    # why wont this show up?????
+    show_text(screen, "F to start/restart, arrow keys to move", 20, 400, 100)
+    standby = True
+    while standby:
+        clock.tick(60)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.KEYUP:
+                # f to restart/pay respects
+                if event.key == K_f:
+                    standby = False
 
-    dodge_entity_right = BlocksRight()
-    all_sprite_list.add(dodge_entity_right)
-    space_rocks.add(dodge_entity_right)
 
-
-dead = True
+background = pygame.image.load(path.join(img_dir, "SPAAAAACE.jpg")).convert()
+asteroid = pygame.image.load(path.join(img_dir, "Asteroid.png")).convert()
+bg_full = background.get_rect()
 
 clock = pygame.time.Clock()
 
-done = False
+points = 0
+dead = True
 
-while dead:
+done = True
+
+while done:
+    if dead:
+        main_menu()
+        all_sprite_list = pygame.sprite.Group()
+        space_rocks = pygame.sprite.Group()
+        player = Player()
+        all_sprite_list.add(player)
+        points = 0
+        dead = False
+        for i in range(5):
+            dodge_entity_top = Blocks()
+            all_sprite_list.add(dodge_entity_top)
+            space_rocks.add(dodge_entity_top)
+
+            dodge_entity_right = BlocksRight()
+            all_sprite_list.add(dodge_entity_right)
+            space_rocks.add(dodge_entity_right)
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            dead = False
+            done = False
         elif event.type == pygame.KEYDOWN:
             if event.key == K_LEFT:
                 player.changespeed(-3, 0)
@@ -188,17 +220,18 @@ while dead:
                 player.changespeed(0, -3)
             if event.key == pygame.K_RIGHT:
                 player.changespeed(-3, 0)
+
+    collis = pygame.sprite.spritecollide(player, space_rocks, False, pygame.sprite.collide_circle)
+    if collis:
+        dead = True
+
+    points += 1/8
+
     all_sprite_list.update()
-
     screen.fill(BLK)
-
+    screen.blit(background, bg_full)
+    show_text(screen, "Points: " + str(int(points)), 20, 500, 20)
     all_sprite_list.draw(screen)
-
     pygame.display.flip()
 
     clock.tick(60)
-
-
-
-
-
